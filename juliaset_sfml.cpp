@@ -2,12 +2,7 @@
 #include <complex>
 #include <iostream>
 
-float julia(double x,
-            double y,
-            double real,
-            double ima,
-            uint maxItr,
-            uint depth)
+float julia(double x, double y, double real, double ima, uint maxItr)
 {
     const std::complex<double> i(0.0, 1.0);
     std::complex<double> c(real, ima);
@@ -21,15 +16,15 @@ float julia(double x,
     return 1;
 }
 
-int zeroOneToIndex(float inValue, const uint step)
+int zeroOneToIndex(const float inValue, const uint step)
 {
-    const float normalizedStep = 1.f / step;
+    const float normalizedStep = 1.f / (step - 1);
     return inValue / normalizedStep;
 }
 
 sf::Color colorTable[] = {
-    { 0, 0, 0 },   { 0, 0, 255 },   { 0, 255, 0 },   { 0, 255, 255 },
-    { 255, 0, 0 }, { 255, 0, 255 }, { 255, 255, 0 },
+    { 0, 0, 0 }, { 0, 0, 255 },   { 0, 255, 0 },   { 0, 255, 255 }, { 255, 0, 0 },
+    { 255, 0, 255 }, { 255, 255, 0 }
 };
 
 template<typename T, uint L>
@@ -39,7 +34,7 @@ constexpr uint getArrayLength(const T (&)[L])
 }
 
 template<typename To, typename From>
-sf::Vector2<To> convertVector(sf::Vector2<From> inValue)
+sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 {
     return sf::Vector2<To>(static_cast<To>(inValue.x),
                            static_cast<To>(inValue.y));
@@ -82,12 +77,13 @@ int main()
                     view.setSize(afterSize.x, afterSize.y);
                     window.setView(view);
                     background.setSize(convertVector<float>(afterSize));
-                    auto newMid = afterSize / 2u;
-                    view.setCenter(newMid.x, newMid.y);
+                    middle = afterSize / 2u;
+                    view.setCenter(middle.x, middle.y);
                     completed = false;
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
         }
 
@@ -100,7 +96,7 @@ int main()
             {
                 for (double n = -2; n <= 2; n += 0.005)
                 {
-                    if (float v = julia(n, m, r, i, 300, 180); v != 0)
+                    if (float v = julia(n, m, r, i, 300); v != 0)
                     {
                         player.setPosition(middle.x + n * 300,
                                            middle.y + m * 300);
