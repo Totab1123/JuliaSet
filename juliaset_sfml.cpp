@@ -73,9 +73,9 @@ int main()
                 }
 
                 case sf::Event::Resized: {
-                    std::cout << "New window width: " << evnt.size.width
-                              << " New window height" << evnt.size.height
-                              << std::endl;
+                    // std::cout << "New window width: " << evnt.size.width
+                    //           << ", New window height: " << evnt.size.height
+                    //           << std::endl;
 
                     const sf::Vector2u afterSize(evnt.size.width,
                                                  evnt.size.height);
@@ -100,6 +100,7 @@ int main()
             const int endAreaPos = 2;
             const uint totalStep = (endAreaPos - startAreaPos) / stepSize;
             const float drawScale = 400;
+            const uint maxItr = 500;
 
             for (int y = 0; y < totalStep; y++)
             {
@@ -107,7 +108,7 @@ int main()
                 {
                     const float n = startAreaPos + stepSize * y;
                     const float m = startAreaPos + stepSize * x;
-                    if (const float v = julia(m, n, r, i, 300); v != 0)
+                    if (const float v = julia(m, n, r, i, maxItr); v != 0)
                     {
                         player.setPosition(middle.x + m * drawScale,
                                            middle.y + n * drawScale);
