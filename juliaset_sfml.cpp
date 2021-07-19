@@ -1,69 +1,124 @@
 #include <SFML/Graphics.hpp>
-#include <iostream>
 #include <complex>
+#include <iostream>
 
-#define CHECK 300
-
-int julia(double x, double y, double real, double ima){
+float julia(double x,
+            double y,
+            double real,
+            double ima,
+            uint maxItr,
+            uint depth)
+{
     const std::complex<double> i(0.0, 1.0);
     std::complex<double> c(real, ima);
-    std::complex<double> z;
+    std::complex<double> z = x + i * y;
 
-    z = x + i * y;
-    for(int i = 0; i < CHECK; i++){
-        z = z*z + c;
-         if(std::abs(z)>10){
-            break;
-        }
-        if(i>CHECK-2){
-            return 1;
-        }
+    for (int i = 0; i < maxItr; i++)
+    {
+        z = z * z + c;
+        if (std::abs(z) > 2) { return static_cast<float>(i) / maxItr; }
     }
-    return 0;
+    return 1;
 }
 
+int zeroOneToIndex(float inValue, const uint step)
+{
+    const float normalizedStep = 1.f / step;
+    return inValue / normalizedStep;
+}
 
-int main(){
-    int middle = 500;
-    
-    sf::RenderWindow window(sf::VideoMode(1000, 1000), "SFML juliaset", sf::Style::Default);
+sf::Color colorTable[] = {
+    { 0, 0, 0 },   { 0, 0, 255 },   { 0, 255, 0 },   { 0, 255, 255 },
+    { 255, 0, 0 }, { 255, 0, 255 }, { 255, 255, 0 },
+};
+
+template<typename T, uint L>
+constexpr uint getArrayLength(const T (&)[L])
+{
+    return L;
+}
+
+template<typename To, typename From>
+sf::Vector2<To> convertVector(sf::Vector2<From> inValue)
+{
+    return sf::Vector2<To>(static_cast<To>(inValue.x),
+                           static_cast<To>(inValue.y));
+}
+
+int main()
+{
+    const sf::Vector2u default_window_size = { 1000, 1000 };
+
+    auto middle = default_window_size / 2u;
+
+    sf::RenderWindow window(
+      sf::VideoMode(default_window_size.x, default_window_size.y),
+      "SFML juliaset",
+      sf::Style::Default);
+    sf::View view = window.getDefaultView();
     sf::RectangleShape player(sf::Vector2f(1.0f, 1.0f));
-    player.setFillColor(sf::Color(0,0,128,10));
-    sf::RectangleShape background(sf::Vector2f(1000.0f, 1000.0f));
+    player.setFillColor(sf::Color(0, 0, 128, 128));
+    sf::RectangleShape background(convertVector<float>(default_window_size));
     background.setFillColor(sf::Color(255, 255, 255, 255));
-    while(window.isOpen())
+
+    // window
+    // view
+
+    bool completed = false;
+    while (window.isOpen())
     {
         sf::Event evnt;
-        while(window.pollEvent(evnt))
+        while (window.pollEvent(evnt))
         {
-            switch(evnt.type)
+            switch (evnt.type)
             {
-            case sf::Event::Closed:
-                window.close();
-                break;
-            
-            case sf::Event::Resized:
-                std::cout << "New window width: " << evnt.size.width << " New window height" << evnt.size.height << std::endl;
-                break;
+                case sf::Event::Closed: {
+                    window.close();
+                    break;
+                }
+
+                case sf::Event::Resized: {
+                    std::cout << "New window width: " << evnt.size.width
+                              << " New window height" << evnt.size.height
+                              << std::endl;
+                    sf::Vector2u afterSize(evnt.size.width, evnt.size.height);
+                    view.setSize(afterSize.x, afterSize.y);
+                    window.setView(view);
+                    background.setSize(convertVector<float>(afterSize));
+                    auto newMid = afterSize / 2u;
+                    view.setCenter(newMid.x, newMid.y);
+                    completed = false;
+                    break;
+                }
+                default: {}
             }
         }
-        window.draw(background);
-        double n, m;
 
-        double r, i;
-        r = 0.27334;
-        i = 0.00742;
-
-        for(m = -2; m <= 2; m += 0.0005){
-            for(n = -2; n <= 2; n += 0.0005){
-                if(julia(n, m, r, i)==1){
-                    player.setPosition(middle + n*300, middle + m*300);
-                    window.draw(player);   
+        if (!completed)
+        {
+            window.draw(background);
+            const double r = 0.27334;
+            const double i = 0.00742;
+            for (double m = -2; m <= 2; m += 0.005)
+            {
+                for (double n = -2; n <= 2; n += 0.005)
+                {
+                    if (float v = julia(n, m, r, i, 300, 180); v != 0)
+                    {
+                        player.setPosition(middle.x + n * 300,
+                                           middle.y + m * 300);
+                        const auto tableLen = getArrayLength(colorTable);
+                        const auto fillColor =
+                          colorTable[zeroOneToIndex(v, tableLen)];
+                        player.setFillColor(fillColor);
+                        window.draw(player);
+                    }
                 }
             }
+            completed = true;
+            std::cout << "drew julia" << std::endl;
+            window.display();
         }
-        
-        window.display();
     }
 
     return 0;
