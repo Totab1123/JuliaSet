@@ -61,9 +61,6 @@ int main()
     sf::RectangleShape background(convertVector<float>(default_window_size));
     background.setFillColor(sf::Color(255, 255, 255, 255));
 
-    // window
-    // view
-
     bool completed = false;
     while (window.isOpen())
     {
