@@ -2,6 +2,9 @@
 #include <complex>
 #include <iostream>
 
+const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
+const sf::Color DEFAULT_BACKGROUND_COLOR = { 255, 255, 255 };
+
 float julia(const double x,
             const double y,
             const double real,
@@ -26,10 +29,11 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-const sf::Color colorTable[] = { { 0, 0, 0 },    { 0, 0, 255 },
-                                 { 0, 255, 0 },  { 0, 255, 255 },
-                                 { 255, 0, 0 },  { 255, 0, 255 },
-                                 { 255, 255, 0 } };
+const sf::Color colorTable[] = {
+    DEFAULT_BACKGROUND_COLOR, { 0, 0, 255 }, { 0, 255, 0 },
+    { 0, 255, 255 },          { 255, 0, 0 }, { 255, 0, 255 },
+    { 255, 255, 0 }
+};
 
 template<typename T, uint L>
 constexpr uint getArrayLength(const T (&)[L])
@@ -46,8 +50,6 @@ sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 
 int main()
 {
-    const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
-    const sf::Color DEFAULT_BACKGROUND_COLOR = { 255, 255, 255 };
     auto middle = DEFAULT_WINDOW_SIZE / 2u;
 
     sf::RenderWindow window(
@@ -93,14 +95,22 @@ int main()
             window.clear(DEFAULT_BACKGROUND_COLOR);
             const double r = 0.27334;
             const double i = 0.00742;
-            for (double m = -2; m <= 2; m += 0.005)
+            const float stepSize = 0.001;
+            const int startAreaPos = -2;
+            const int endAreaPos = 2;
+            const uint totalStep = (endAreaPos - startAreaPos) / stepSize;
+            const float drawScale = 400;
+
+            for (int y = 0; y < totalStep; y++)
             {
-                for (double n = -2; n <= 2; n += 0.005)
+                for (int x = 0; x < totalStep; x++)
                 {
-                    if (float v = julia(n, m, r, i, 300); v != 0)
+                    const float n = startAreaPos + stepSize * y;
+                    const float m = startAreaPos + stepSize * x;
+                    if (const float v = julia(m, n, r, i, 300); v != 0)
                     {
-                        player.setPosition(middle.x + n * 300,
-                                           middle.y + m * 300);
+                        player.setPosition(middle.x + m * drawScale,
+                                           middle.y + n * drawScale);
                         const auto tableLen = getArrayLength(colorTable);
                         const auto fillColor =
                           colorTable[zeroOneToIndex(v, tableLen)];
@@ -108,10 +118,10 @@ int main()
                         window.draw(player);
                     }
                 }
+                window.display();
             }
             completed = true;
             std::cout << "drew julia" << std::endl;
-            window.display();
         }
     }
 
