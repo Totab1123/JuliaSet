@@ -1,0 +1,4 @@
+build/
+juliaset
+.vscode/
+.DS_Store
