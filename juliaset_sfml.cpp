@@ -42,17 +42,16 @@ sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 
 int main()
 {
-    const sf::Vector2u default_window_size = { 1000, 1000 };
-    auto middle = default_window_size / 2u;
+    const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
+    auto middle = DEFAULT_WINDOW_SIZE / 2u;
+    sf::Color DEFAULT_BACKGROUND_COLOR = {255, 255, 255};
 
     sf::RenderWindow window(
-      sf::VideoMode(default_window_size.x, default_window_size.y),
+      sf::VideoMode(DEFAULT_WINDOW_SIZE.x, DEFAULT_WINDOW_SIZE.y),
       "SFML juliaset",
       sf::Style::Default);
     sf::RectangleShape player(sf::Vector2f(1.0f, 1.0f));
     player.setFillColor(sf::Color(0, 0, 128, 128));
-    sf::RectangleShape background(convertVector<float>(default_window_size));
-    background.setFillColor(sf::Color(255, 255, 255, 255));
 
     bool completed = false;
     while (window.isOpen())
@@ -76,9 +75,6 @@ int main()
                     sf::View view = window.getDefaultView();
                     view.setSize(afterSize.x, afterSize.y);
                     window.setView(view);
-                    background.setSize(convertVector<float>(afterSize));
-                    middle = afterSize / 2u;
-                    view.setCenter(middle.x, middle.y);
                     completed = false;
                     break;
                 }
@@ -89,7 +85,7 @@ int main()
 
         if (!completed)
         {
-            window.draw(background);
+            window.clear(DEFAULT_BACKGROUND_COLOR);
             const double r = 0.27334;
             const double i = 0.00742;
             for (double m = -2; m <= 2; m += 0.005)
