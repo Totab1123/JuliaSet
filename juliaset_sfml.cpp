@@ -2,10 +2,14 @@
 #include <complex>
 #include <iostream>
 
-float julia(double x, double y, double real, double ima, uint maxItr)
+float julia(const double x,
+            const double y,
+            const double real,
+            const double ima,
+            const uint maxItr)
 {
     const std::complex<double> i(0.0, 1.0);
-    std::complex<double> c(real, ima);
+    const std::complex<double> c(real, ima);
     std::complex<double> z = x + i * y;
 
     for (int i = 0; i < maxItr; i++)
@@ -22,10 +26,10 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-sf::Color colorTable[] = {
-    { 0, 0, 0 }, { 0, 0, 255 },   { 0, 255, 0 },   { 0, 255, 255 }, { 255, 0, 0 },
-    { 255, 0, 255 }, { 255, 255, 0 }
-};
+const sf::Color colorTable[] = { { 0, 0, 0 },    { 0, 0, 255 },
+                                 { 0, 255, 0 },  { 0, 255, 255 },
+                                 { 255, 0, 0 },  { 255, 0, 255 },
+                                 { 255, 255, 0 } };
 
 template<typename T, uint L>
 constexpr uint getArrayLength(const T (&)[L])
@@ -43,8 +47,8 @@ sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 int main()
 {
     const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
+    const sf::Color DEFAULT_BACKGROUND_COLOR = { 255, 255, 255 };
     auto middle = DEFAULT_WINDOW_SIZE / 2u;
-    sf::Color DEFAULT_BACKGROUND_COLOR = {255, 255, 255};
 
     sf::RenderWindow window(
       sf::VideoMode(DEFAULT_WINDOW_SIZE.x, DEFAULT_WINDOW_SIZE.y),
@@ -71,7 +75,8 @@ int main()
                               << " New window height" << evnt.size.height
                               << std::endl;
 
-                    sf::Vector2u afterSize(evnt.size.width, evnt.size.height);
+                    const sf::Vector2u afterSize(evnt.size.width,
+                                                 evnt.size.height);
                     sf::View view = window.getDefaultView();
                     view.setSize(afterSize.x, afterSize.y);
                     window.setView(view);
