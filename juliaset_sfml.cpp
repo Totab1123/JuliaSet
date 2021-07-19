@@ -48,14 +48,12 @@ sf::Vector2<To> convertVector(sf::Vector2<From> inValue)
 int main()
 {
     const sf::Vector2u default_window_size = { 1000, 1000 };
-
     auto middle = default_window_size / 2u;
 
     sf::RenderWindow window(
       sf::VideoMode(default_window_size.x, default_window_size.y),
       "SFML juliaset",
       sf::Style::Default);
-    sf::View view = window.getDefaultView();
     sf::RectangleShape player(sf::Vector2f(1.0f, 1.0f));
     player.setFillColor(sf::Color(0, 0, 128, 128));
     sf::RectangleShape background(convertVector<float>(default_window_size));
@@ -78,7 +76,9 @@ int main()
                     std::cout << "New window width: " << evnt.size.width
                               << " New window height" << evnt.size.height
                               << std::endl;
+
                     sf::Vector2u afterSize(evnt.size.width, evnt.size.height);
+                    sf::View view = window.getDefaultView();
                     view.setSize(afterSize.x, afterSize.y);
                     window.setView(view);
                     background.setSize(convertVector<float>(afterSize));
