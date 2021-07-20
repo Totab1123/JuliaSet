@@ -30,9 +30,9 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-const sf::Color colorTable[] = { { 0, 0, 0, 255 }, { 0, 0, 255 },
-                                 { 0, 255, 0 },    { 0, 255, 255 },
-                                 { 255, 0, 0 },    { 255, 0, 255 },
+const sf::Color colorTable[] = { { 64, 128, 120 }, { 0, 0, 255 },
+                                 { 0, 255, 0 },  { 0, 255, 255 },
+                                 { 255, 0, 0 },  { 255, 0, 255 },
                                  { 255, 255, 0 } };
 
 template<typename T, uint L>
@@ -70,28 +70,19 @@ void drawJulia(sf::RenderWindow& window,
 
     std::mutex mut;
     const auto painter = [&](const int startY, const int step) {
-        const int clopedWidth = totalStep > viewSize.x ? viewSize.x : totalStep;
-        const auto originX = clopedWidth / 2.f;
         sf::Image pixelBuffer;
-        pixelBuffer.create(clopedWidth, step, sf::Color { 0, 0, 0, 0 });
-
-        const int clopedStartX = clopedWidth / 2.f < totalStep / 2.f
-                                   ? totalStep / 2.f - clopedWidth / 2.f
-                                   : 0;
-        const int clopedEndX = clopedStartX + clopedWidth;
+        pixelBuffer.create(totalStep, step, sf::Color { 0, 0, 0, 0 });
 
         sf::Sprite bufferSprite;
-        bufferSprite.setOrigin(originX, totalStep / 2.f);
-        bufferSprite.setPosition(clopedStartX > 0 ? 0 : drawPos.x,
-                                 drawPos.y + startY * drawScale);
+        bufferSprite.setOrigin(totalStep / 2.f, totalStep / 2.f);
+        bufferSprite.setPosition(drawPos.x, drawPos.y + startY * drawScale);
         bufferSprite.setScale(drawScale, drawScale);
         sf::Texture bufferTexture;
 
         const auto s = partStep < step ? partStep : step;
         for (int y = startY; y < startY + s; y++)
         {
-            int xIndex = 0;
-            for (int x = 0; x < totalStep; x++, xIndex++)
+            for (int x = 0; x < totalStep; x++)
             {
                 const float n = startAreaPos + stepSize * y;
                 const float m = startAreaPos + stepSize * x;
@@ -99,10 +90,9 @@ void drawJulia(sf::RenderWindow& window,
                 {
                     const auto fillColor =
                       colorTable[zeroOneToIndex(v, tableLen)];
-                    pixelBuffer.setPixel(xIndex, y - startY, fillColor);
+                    pixelBuffer.setPixel(x, y - startY, fillColor);
                 }
             }
-            std::cout << xIndex << std::endl;
         }
 
         bufferTexture.loadFromImage(pixelBuffer);
@@ -168,10 +158,10 @@ int main()
         {
             window.clear(DEFAULT_BACKGROUND_COLOR);
             drawJulia(window,
-                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u),
-                      0.005,
-                      400,
-                      2);
+                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u + sf::Vector2u(700, 0)),
+                      0.0004,
+                      600,
+                      0.5);
             completed = true;
             std::cout << "drew julia" << std::endl;
         }
