@@ -15,7 +15,7 @@ target_compile_options(${CMAKE_PROJECT_NAME}
     PRIVATE -Ofast -Wall
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} sfml-graphics sfml-system sfml-window )
+target_link_libraries(${CMAKE_PROJECT_NAME} sfml-graphics sfml-system sfml-window pthread)
 
 set_property(TARGET ${CMAKE_PROJECT_NAME}
     PROPERTY CXX_STANDARD 20

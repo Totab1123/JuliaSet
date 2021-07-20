@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <complex>
 #include <iostream>
+#include <thread>
 
 const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
 const sf::Color DEFAULT_BACKGROUND_COLOR = { 255, 255, 255 };
@@ -29,9 +30,9 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-const sf::Color colorTable[] = { { 0, 0, 0, 0 }, { 0, 0, 255 },
-                                 { 0, 255, 0 },  { 0, 255, 255 },
-                                 { 255, 0, 0 },  { 255, 0, 255 },
+const sf::Color colorTable[] = { { 0, 0, 0, 255 }, { 0, 0, 255 },
+                                 { 0, 255, 0 },    { 0, 255, 255 },
+                                 { 255, 0, 0 },    { 255, 0, 255 },
                                  { 255, 255, 0 } };
 
 template<typename T, uint L>
@@ -48,11 +49,13 @@ sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 }
 
 void drawJulia(sf::RenderWindow& window,
-               const sf::Vector2i drawPos,
+               const sf::Vector2f drawPos,
                const float stepSize = 0.005,
                const uint maxItr = 300,
-               const float drawScale = 300)
+               const float drawScale = 1)
 {
+    const auto viewSize = window.getDefaultView().getSize();
+
     const double r = 0.27334;
     const double i = 0.00742;
     const int startAreaPos = -2;
@@ -61,24 +64,65 @@ void drawJulia(sf::RenderWindow& window,
     const auto tableLen = getArrayLength(colorTable);
 
     sf::RectangleShape player(sf::Vector2f(1.0f, 1.0f));
-    for (int y = 0; y < totalStep; y++)
-    {
-        for (int x = 0; x < totalStep; x++)
+
+    const uint partStep = 100;
+    const uint parallel = 4;
+
+    std::mutex mut;
+    const auto painter = [&](const int startY, const int step) {
+        const int clopedWidth = totalStep > viewSize.x ? viewSize.x : totalStep;
+        const auto originX = clopedWidth / 2.f;
+        sf::Image pixelBuffer;
+        pixelBuffer.create(clopedWidth, step, sf::Color { 0, 0, 0, 0 });
+
+        const int clopedStartX = clopedWidth / 2.f < totalStep / 2.f
+                                   ? totalStep / 2.f - clopedWidth / 2.f
+                                   : 0;
+        const int clopedEndX = clopedStartX + clopedWidth;
+
+        sf::Sprite bufferSprite;
+        bufferSprite.setOrigin(originX, totalStep / 2.f);
+        bufferSprite.setPosition(clopedStartX > 0 ? 0 : drawPos.x,
+                                 drawPos.y + startY * drawScale);
+        bufferSprite.setScale(drawScale, drawScale);
+        sf::Texture bufferTexture;
+
+        const auto s = partStep < step ? partStep : step;
+        for (int y = startY; y < startY + s; y++)
         {
-            const float n = startAreaPos + stepSize * y;
-            const float m = startAreaPos + stepSize * x;
-            if (const float v = julia(m, n, r, i, maxItr); v != 0)
+            int xIndex = 0;
+            for (int x = 0; x < totalStep; x++, xIndex++)
             {
-                const auto p =
-                  drawPos + (sf::Vector2i(m * drawScale, n * drawScale));
-                player.setPosition(p.x, p.y);
-                const auto fillColor = colorTable[zeroOneToIndex(v, tableLen)];
-                player.setFillColor(fillColor);
-                window.draw(player);
+                const float n = startAreaPos + stepSize * y;
+                const float m = startAreaPos + stepSize * x;
+                if (const float v = julia(m, n, r, i, maxItr); v != 0)
+                {
+                    const auto fillColor =
+                      colorTable[zeroOneToIndex(v, tableLen)];
+                    pixelBuffer.setPixel(xIndex, y - startY, fillColor);
+                }
             }
+            std::cout << xIndex << std::endl;
         }
+
+        bufferTexture.loadFromImage(pixelBuffer);
+        bufferSprite.setTexture(bufferTexture);
+
+        std::lock_guard guard(mut);
+        window.draw(bufferSprite);
         window.display();
+    };
+
+    std::vector<std::thread> workers;
+    uint remainStep = totalStep;
+    while (remainStep > 0)
+    {
+        const auto l = partStep > remainStep ? remainStep : partStep;
+        workers.emplace_back(painter, totalStep - remainStep, l);
+        remainStep -= l;
     }
+
+    for (auto& worker : workers) { worker.join(); }
 }
 
 int main()
@@ -123,7 +167,11 @@ int main()
         if (!completed)
         {
             window.clear(DEFAULT_BACKGROUND_COLOR);
-            drawJulia(window, convertVector<int>(DEFAULT_WINDOW_SIZE / 2u), 0.005, 300, 400);
+            drawJulia(window,
+                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u),
+                      0.005,
+                      400,
+                      2);
             completed = true;
             std::cout << "drew julia" << std::endl;
         }
