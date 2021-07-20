@@ -30,10 +30,9 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-const sf::Color colorTable[] = { DEFAULT_BACKGROUND_COLOR, { 0, 0, 255 },
-                                 { 0, 255, 0 },  { 0, 255, 255 },
-                                 { 255, 0, 0 },  { 255, 0, 255 },
-                                 { 255, 255, 0 } };
+const sf::Color colorTable[] = { DEFAULT_BACKGROUND_COLOR, { 128, 128, 0 },
+                                 { 200, 11, 129 },         { 0, 41, 255 },
+                                 { 128, 255, 64 },         { 0, 110, 84 } };
 
 sf::Color colorGraduationFromColorTable(const float inValue,
                                         const std::vector<sf::Color>& table)
@@ -44,8 +43,9 @@ sf::Color colorGraduationFromColorTable(const float inValue,
     const sf::Color intervalStartCol = table[lookingInterval];
     const sf::Color intervalEndCol = table[lookingInterval + 1];
 
-    const float alpha =
-      (inValue - lookingInterval * intervalSize) / intervalSize;
+    float alpha = (inValue - lookingInterval * intervalSize) / intervalSize;
+
+    alpha = alpha * alpha;
     return sf::Color(
       (1 - alpha) * intervalStartCol.r + alpha * intervalEndCol.r,
       (1 - alpha) * intervalStartCol.g + alpha * intervalEndCol.g,
@@ -67,24 +67,19 @@ sf::Vector2<To> convertVector(const sf::Vector2<From> inValue)
 }
 
 void drawJulia(sf::RenderWindow& window,
+               std::complex<double> c,
                const sf::Vector2f drawPos,
                const float stepSize = 0.005,
                const uint maxItr = 300,
                const float drawScale = 1)
 {
-    const auto viewSize = window.getDefaultView().getSize();
-
-    const double r = 0.27334;
-    const double i = 0.00742;
     const int startAreaPos = -2;
     const int endAreaPos = 2;
     const uint totalStep = (endAreaPos - startAreaPos) / stepSize;
-    const auto tableLen = getArrayLength(colorTable);
 
     sf::RectangleShape player(sf::Vector2f(1.0f, 1.0f));
 
     const uint partStep = 100;
-    const uint parallel = 4;
 
     std::mutex mut;
     const auto painter = [&](const int startY, const int step) {
@@ -98,14 +93,16 @@ void drawJulia(sf::RenderWindow& window,
         sf::Texture bufferTexture;
 
         const auto s = partStep < step ? partStep : step;
-        std::vector<sf::Color> ct(colorTable, colorTable+getArrayLength(colorTable));
+        std::vector<sf::Color> ct(colorTable,
+                                  colorTable + getArrayLength(colorTable));
         for (int y = startY; y < startY + s; y++)
         {
             for (int x = 0; x < totalStep; x++)
             {
                 const float n = startAreaPos + stepSize * y;
                 const float m = startAreaPos + stepSize * x;
-                if (const float v = julia(m, n, r, i, maxItr); v != 0)
+                if (const float v = julia(m, n, c.real(), c.imag(), maxItr);
+                    v != 0)
                 {
                     const auto fillColor = colorGraduationFromColorTable(v, ct);
 
@@ -119,7 +116,6 @@ void drawJulia(sf::RenderWindow& window,
 
         std::lock_guard guard(mut);
         window.draw(bufferSprite);
-        window.display();
     };
 
     std::vector<std::thread> workers;
@@ -143,8 +139,14 @@ int main()
       sf::Style::Default);
 
     bool completed = false;
+    float r = 0;
+    auto point = std::chrono::system_clock::now();
     while (window.isOpen())
     {
+        auto now = std::chrono::system_clock::now();
+        double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - point).count() / 1000.f;
+        point = std::chrono::system_clock::now();
+
         sf::Event evnt;
         while (window.pollEvent(evnt))
         {
@@ -173,17 +175,20 @@ int main()
             }
         }
 
-        if (!completed)
-        {
-            window.clear(DEFAULT_BACKGROUND_COLOR);
-            drawJulia(window,
-                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u),
-                      0.0004,
-                      3000,
-                      0.6);
-            completed = true;
-            std::cout << "drew julia" << std::endl;
-        }
+        // if (!completed)
+        // {
+        window.clear(DEFAULT_BACKGROUND_COLOR);
+        drawJulia(
+          window,
+          std::complex<double>(0.8 * std::cos(r * 1.2), 0.8 * std::sin(r)),
+          convertVector<float>(DEFAULT_WINDOW_SIZE / 2u),
+          0.002,
+          300,
+          1.5);
+        r += 0.1 * dt;
+        window.display();
+        completed = true;
+        // }
     }
 
     return 0;
