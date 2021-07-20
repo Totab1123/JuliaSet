@@ -4,7 +4,7 @@
 #include <thread>
 
 const sf::Vector2u DEFAULT_WINDOW_SIZE = { 1000, 1000 };
-const sf::Color DEFAULT_BACKGROUND_COLOR = { 255, 255, 255 };
+const sf::Color DEFAULT_BACKGROUND_COLOR = { 0, 0, 0 };
 
 float julia(const double x,
             const double y,
@@ -30,10 +30,28 @@ int zeroOneToIndex(const float inValue, const uint step)
     return inValue / normalizedStep;
 }
 
-const sf::Color colorTable[] = { { 64, 128, 120 }, { 0, 0, 255 },
+const sf::Color colorTable[] = { DEFAULT_BACKGROUND_COLOR, { 0, 0, 255 },
                                  { 0, 255, 0 },  { 0, 255, 255 },
                                  { 255, 0, 0 },  { 255, 0, 255 },
                                  { 255, 255, 0 } };
+
+sf::Color colorGraduationFromColorTable(const float inValue,
+                                        const std::vector<sf::Color>& table)
+{
+    const float intervalSize = 1.f / (table.size() - 1);
+    const uint lookingInterval = inValue / intervalSize;
+
+    const sf::Color intervalStartCol = table[lookingInterval];
+    const sf::Color intervalEndCol = table[lookingInterval + 1];
+
+    const float alpha =
+      (inValue - lookingInterval * intervalSize) / intervalSize;
+    return sf::Color(
+      (1 - alpha) * intervalStartCol.r + alpha * intervalEndCol.r,
+      (1 - alpha) * intervalStartCol.g + alpha * intervalEndCol.g,
+      (1 - alpha) * intervalStartCol.b + alpha * intervalEndCol.b,
+      255);
+}
 
 template<typename T, uint L>
 constexpr uint getArrayLength(const T (&)[L])
@@ -80,6 +98,7 @@ void drawJulia(sf::RenderWindow& window,
         sf::Texture bufferTexture;
 
         const auto s = partStep < step ? partStep : step;
+        std::vector<sf::Color> ct(colorTable, colorTable+getArrayLength(colorTable));
         for (int y = startY; y < startY + s; y++)
         {
             for (int x = 0; x < totalStep; x++)
@@ -88,8 +107,8 @@ void drawJulia(sf::RenderWindow& window,
                 const float m = startAreaPos + stepSize * x;
                 if (const float v = julia(m, n, r, i, maxItr); v != 0)
                 {
-                    const auto fillColor =
-                      colorTable[zeroOneToIndex(v, tableLen)];
+                    const auto fillColor = colorGraduationFromColorTable(v, ct);
+
                     pixelBuffer.setPixel(x, y - startY, fillColor);
                 }
             }
@@ -158,10 +177,10 @@ int main()
         {
             window.clear(DEFAULT_BACKGROUND_COLOR);
             drawJulia(window,
-                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u + sf::Vector2u(700, 0)),
+                      convertVector<float>(DEFAULT_WINDOW_SIZE / 2u),
                       0.0004,
-                      600,
-                      0.5);
+                      3000,
+                      0.6);
             completed = true;
             std::cout << "drew julia" << std::endl;
         }
